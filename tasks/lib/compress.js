@@ -5,7 +5,8 @@ var fs = require('fs'),
     path = require('path'),
     archiver = require('archiver'),
     Readable = require('lazystream').Readable,
-    Writable = require('lazystream').Writable;
+    Writable = require('lazystream').Writable,
+    child_process = require('child_process');
 
 
 // Download and unzip/untar the node wekit files from aws
@@ -59,7 +60,9 @@ module.exports = function(grunt) {
         }
     };
 
-    exports.generateRelease = function(relaseFile, zipPath, type, nwpath) {
+    exports.generateRelease = function(relaseFile, zipPath, options, type, nwpath) {
+
+        grunt.log.ok("generate release " + relaseFile);
         var releaseDone = Q.defer(),
             ws = new Writable(function() {
                 return fs.createWriteStream(relaseFile);
@@ -81,8 +84,25 @@ module.exports = function(grunt) {
         });
 
         if(type === 'mac') {
-            // On osx just copy to the target location
-            zipStream.pipe(ws);
+
+            if (options.compress_mac){
+                zipStream.pipe(ws);
+            }
+            else
+            {
+                // on osx just copy to the target location
+                var build_dir = path.resolve(options.base_app_dir);
+                grunt.log.ok('Copy instead of zipping ' + build_dir + ' -> ' + relaseFile.cyan);
+
+                //copy
+                child_process.execFile('/bin/cp', ['-r', build_dir, relaseFile],{},
+                    function (error, stdout, stderr) {
+                        if (error !== null) {
+                          console.log('exec error: ' + error);
+                        }
+                    });
+            }
+           
         } else {
             // on windows and linux cat the node-webkit with the nw archive
             nwpath_rs = fs.createReadStream(nwpath);

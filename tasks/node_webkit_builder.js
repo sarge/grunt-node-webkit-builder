@@ -34,6 +34,7 @@ module.exports = function(grunt) {
           app_name: null,
           app_version: null,
           build_dir: null, // Path where
+          base_app_dir: null, // Path 
           force_download: false,
           win: true,
           mac: true,
@@ -42,7 +43,8 @@ module.exports = function(grunt) {
           download_url: 'https://s3.amazonaws.com/node-webkit/',
           timestamped_builds: false,
           credits: false,
-          keep_nw: false
+          keep_nw: false,
+          compress_mac: false
       }),
       webkitFiles = [{
         'url': "v%VERSION%/node-webkit-v%VERSION%-win-ia32.zip",
@@ -89,7 +91,7 @@ module.exports = function(grunt) {
         buildFiles = filesInfo[0];
 
     // Check if we need to get the AppName and AppVersion from the json or from the config
-    var packageInfo = utils.getPackageInfo(filesInfo[1]);
+    var packageInfo = utils.getPackageInfo(filesInfo[1]);   
 
     if(!options.app_name || !options.app_version) {
       options.app_name = options.app_name || packageInfo.name;
@@ -219,14 +221,20 @@ module.exports = function(grunt) {
           }
         });
 
+        grunt.verbose.writeln('releaseFolder ' + releaseFolder + ' -> releasePathApp :' + releasePathApp);
+
         // Let's create the release
         generateDone.push(
-          compress.generateRelease(
-            releasePathApp,
-            zipFile,
-            plattform.type,
-            (plattform.type !== 'mac' ? path.resolve(plattform.dest, plattform.nwpath) : null)
-          )
+         
+              compress.generateRelease(
+                releasePathApp,
+                zipFile,
+                options,
+                plattform.type,
+                (plattform.type !== 'mac' ? path.resolve(plattform.dest, plattform.nwpath) : null)
+              )
+            
+          
         );
       });
 
